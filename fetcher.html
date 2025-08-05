@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GitHub Repos Fetcher</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+</head>
+<body>
+  <div class="container">
+    <h2>GitHub Repositories Viewer</h2>
+    <form id="githubForm">
+      <input type="text" id="username" placeholder="Enter GitHub username..." required />
+      <button type="submit">Fetch Repos</button>
+    </form>
+    <ul id="repoList"></ul>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('githubForm');
+  const usernameInput = document.getElementById('username');
+  const repoList = document.getElementById('repoList');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const username = usernameInput.value.trim();
+    if (username === '') return;
+
+    const xhr = new XMLHttpRequest();
+    const url = `https://api.github.com/users/${username}/repos`;
+
+    repoList.innerHTML = '<li>Loading...</li>';
+
+    xhr.open('GET', url, true);
+    xhr.onload = function () {
+      repoList.innerHTML = ''; // Clear previous results
+
+      if (xhr.status === 200) {
+        const repos = JSON.parse(xhr.responseText);
+
+        if (repos.length === 0) {
+          repoList.innerHTML = '<li>No repositories found.</li>';
+        } else {
+          repos.forEach(repo => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = repo.html_url;
+            a.target = '_blank';
+            a.textContent = repo.name;
+            li.appendChild(a);
+            repoList.appendChild(li);
+          });
+        }
+      } else {
+        repoList.innerHTML = '<li>User not found or error fetching data.</li>';
+      }
+    };
+
+    xhr.onerror = function () {
+      repoList.innerHTML = '<li>Network error occurred.</li>';
+    };
+
+    xhr.send();
+  });
+});
+</script>
+
+</body>
+</html>
