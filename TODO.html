@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Simple To-Do App (Persistent)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      height: 100vh;
+    }
+    #left-pane {
+      width: 40%;
+      border-right: 1px solid #5d5353;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    #right-pane {
+      flex: 1;
+      padding: 10px;
+    }
+    .task {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px;
+      border-bottom: 1px solid #d15757;
+    }
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+    .delete-btn {
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left pane: Task list -->
+  <div id="left-pane">
+    <h3>Tasks</h3>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- Right pane: Task form -->
+  <div id="right-pane">
+    <h3>Add Task</h3>
+    <form id="task-form">
+      <label for="task-name">Task:</label><br>
+      <input type="text" id="task-name" required>
+      <br><br>
+      <button type="submit">Add Task</button>
+    </form>
+  </div>
+
+  <script>
+    // Load tasks from localStorage or start empty
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    const taskListEl = document.getElementById('task-list');
+    const taskForm = document.getElementById('task-form');
+    const taskNameInput = document.getElementById('task-name');
+
+    // Save to localStorage
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // Render tasks in left pane
+    function renderTasks() {
+      taskListEl.innerHTML = '';
+      tasks.forEach((task, index) => {
+        const taskEl = document.createElement('div');
+        taskEl.className = 'task';
+
+        const taskText = document.createElement('span');
+        taskText.textContent = task.name;
+        if (task.completed) {
+          taskText.classList.add('completed');
+        }
+        taskText.onclick = () => toggleComplete(index);
+
+        const deleteBtn = document.createElement('span');
+        deleteBtn.textContent = '✖';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.onclick = () => deleteTask(index);
+
+        taskEl.appendChild(taskText);
+        taskEl.appendChild(deleteBtn);
+
+        taskListEl.appendChild(taskEl);
+      });
+    }
+
+    // Add task
+    taskForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const taskName = taskNameInput.value.trim();
+      if (taskName) {
+        tasks.push({ name: taskName, completed: false });
+        taskNameInput.value = '';
+        saveTasks();
+        renderTasks();
+      }
+    });
+
+    // Toggle complete
+    function toggleComplete(index) {
+      tasks[index].completed = !tasks[index].completed;
+      saveTasks();
+      renderTasks();
+    }
+
+    // Delete task
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
+    }
+
+    // Initial render
+    renderTasks();
+  </script>
+
+</body>
+</html>
