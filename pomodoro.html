@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pomodoro Clock</title>
+<style>
+  body {
+    background-color: #222;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .container {
+    height: 460px;
+    width: 220px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+  }
+
+  .timer-display {
+    font-size: 2.5rem;
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .status-text {
+    text-align: center;
+    font-size: 1rem;
+    color: yellow;
+    height: 20px;
+  }
+
+  .progress-container {
+    height: 12px;
+    background-color: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 5px auto;
+    width: 90%;
+  }
+
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: green;
+    transition: width 0.5s linear;
+  }
+
+  .controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+
+  .time-set {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+  }
+
+  .label {
+    font-size: 1rem;
+  }
+
+  .btn {
+    background: none;
+    border: 1px solid white;
+    color: white;
+    font-size: 1.2rem;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .bottom-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+  }
+
+  .big-btn {
+    flex: 1;
+    padding: 8px;
+    margin: 0 5px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+
+  .start-btn {
+    background-color: green;
+    color: white;
+  }
+
+  .reset-btn {
+    background-color: red;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Timer Display -->
+  <div>
+    <div class="timer-display" id="timer-display">25:00</div>
+    <div class="status-text" id="status-text"></div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <!-- Session time setting -->
+    <div class="time-set">
+      <span class="label">Session</span>
+      <div>
+        <button class="btn" id="session-decrease">-</button>
+        <span id="session-length">25</span>
+        <button class="btn" id="session-increase">+</button>
+      </div>
+    </div>
+
+    <!-- Break time setting -->
+    <div class="time-set">
+      <span class="label">Break</span>
+      <div>
+        <button class="btn" id="break-decrease">-</button>
+        <span id="break-length">5</span>
+        <button class="btn" id="break-increase">+</button>
+      </div>
+    </div>
+
+    <!-- Start & Reset buttons -->
+    <div class="bottom-buttons">
+      <button class="big-btn start-btn" id="start-btn">Start</button>
+      <button class="big-btn reset-btn" id="reset-btn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let sessionLength = 25;
+  let breakLength = 5;
+  let isRunning = false;
+  let isSession = true;
+  let timeRemaining = sessionLength * 60; // in seconds
+  let totalTime = sessionLength * 60;
+  let timerInterval;
+
+  const timerDisplay = document.getElementById('timer-display');
+  const statusText = document.getElementById('status-text');
+  const progressBar = document.getElementById('progress-bar');
+  const sessionLengthEl = document.getElementById('session-length');
+  const breakLengthEl = document.getElementById('break-length');
+  const startBtn = document.getElementById('start-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const sessionIncreaseBtn = document.getElementById('session-increase');
+  const sessionDecreaseBtn = document.getElementById('session-decrease');
+  const breakIncreaseBtn = document.getElementById('break-increase');
+  const breakDecreaseBtn = document.getElementById('break-decrease');
+
+  function updateDisplay() {
+    let minutes = Math.floor(timeRemaining / 60);
+    let seconds = timeRemaining % 60;
+    timerDisplay.textContent =
+      String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    updateProgressBar();
+  }
+
+  function updateProgressBar() {
+    let progress;
+    if (isSession) {
+      progress = ((totalTime - timeRemaining) / totalTime) * 100; // fills up
+      progressBar.style.backgroundColor = 'green';
+    } else {
+      progress = (timeRemaining / totalTime) * 100; // decreases
+      progressBar.style.backgroundColor = 'red';
+    }
+    progressBar.style.width = progress + '%';
+  }
+
+  function toggleButtons(disable) {
+    sessionIncreaseBtn.disabled = disable;
+    sessionDecreaseBtn.disabled = disable;
+    breakIncreaseBtn.disabled = disable;
+    breakDecreaseBtn.disabled = disable;
+  }
+
+  function startTimer() {
+    if (!isRunning) {
+      isRunning = true;
+      startBtn.textContent = 'Pause';
+      toggleButtons(true);
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateDisplay();
+        if (timeRemaining <= 0) {
+          isSession = !isSession;
+          statusText.textContent = isSession ? '' : 'Break is going on';
+          totalTime = (isSession ? sessionLength : breakLength) * 60;
+          timeRemaining = totalTime;
+        }
+      }, 1000);
+    } else {
+      isRunning = false;
+      startBtn.textContent = 'Start';
+      clearInterval(timerInterval);
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    isSession = true;
+    sessionLength = 25;
+    breakLength = 5;
+    totalTime = sessionLength * 60;
+    timeRemaining = totalTime;
+    sessionLengthEl.textContent = sessionLength;
+    breakLengthEl.textContent = breakLength;
+    startBtn.textContent = 'Start';
+    toggleButtons(false);
+    statusText.textContent = '';
+    updateDisplay();
+  }
+
+  // Button listeners
+  startBtn.addEventListener('click', startTimer);
+  resetBtn.addEventListener('click', resetTimer);
+
+  sessionIncreaseBtn.addEventListener('click', () => {
+    sessionLength++;
+    sessionLengthEl.textContent = sessionLength;
+    if (isSession) {
+      totalTime = sessionLength * 60;
+      timeRemaining = totalTime;
+      updateDisplay();
+    }
+  });
+
+  sessionDecreaseBtn.addEventListener('click', () => {
+    if (sessionLength > 0) {
+      sessionLength--;
+      sessionLengthEl.textContent = sessionLength;
+      if (isSession) {
+        totalTime = sessionLength * 60;
+        timeRemaining = totalTime;
+        updateDisplay();
+      }
+    }
+  });
+
+  breakIncreaseBtn.addEventListener('click', () => {
+    breakLength++;
+    breakLengthEl.textContent = breakLength;
+    if (!isSession) {
+      totalTime = breakLength * 60;
+      timeRemaining = totalTime;
+      updateDisplay();
+    }
+  });
+
+  breakDecreaseBtn.addEventListener('click', () => {
+    if (breakLength > 0) {
+      breakLength--;
+      breakLengthEl.textContent = breakLength;
+      if (!isSession) {
+        totalTime = breakLength * 60;
+        timeRemaining = totalTime;
+        updateDisplay();
+      }
+    }
+  });
+
+  // Initial display
+  updateDisplay();
+</script>
+
+</body>
+</html>
